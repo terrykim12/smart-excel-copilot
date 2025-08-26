@@ -1,68 +1,102 @@
-
-from __future__ import annotations
+# app/autoexcel/intent.py
+import json
+import os
+import logging
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 from .intent_schema import Intent
 from .intent_llm import parse_with_llm
 
-def parse_rule(text: str) -> Intent:
+logger = logging.getLogger(__name__)
+
+def _load_keyword_map(file_path: Optional[str] = None) -> Dict[str, Any]:
+    """keyword_map.json을 읽어 동적 매핑을 제공하며, 없을 경우 기본 매핑 사용."""
+    default_map = {
+        "rows": {
+            "월": ["월", "월별", "month"],
+            "카테고리": ["카테고리", "카테고리별", "category", "cat"],
+            "도시": ["도시", "도시별", "지역", "지역별", "city", "region"],
+            "년": ["년", "연", "year"],
+            "분기": ["분기", "quarter"],
+        },
+        "values": {
+            "금액": {"keywords": ["매출", "금액", "합계", "sum", "sales", "amount"], "agg": "sum"},
+            "수량": {"keywords": ["수량", "개수", "count", "quantity", "qty"], "agg": "sum"},
+        },
+        "chart": {
+            "bar": ["막대", "막대차트", "bar", "bar chart", "column"],
+            "line": ["라인", "선", "line", "line chart"],
+            "pie": ["파이", "파이차트", "pie", "pie chart"],
+        },
+        "filters": {
+            "도시": {
+                "서울": ["서울", "seoul"],
+                "부산": ["부산", "busan"],
+                "대구": ["대구", "daegu"],
+                "인천": ["인천", "incheon"],
+                "광주": ["광주", "gwangju"],
+            }
+        },
+    }
+    map_path = (
+        file_path
+        or os.getenv("SEC_KEYWORD_MAP")
+        or str(Path(__file__).with_name("keyword_map.json"))
+    )
+    try:
+        with open(map_path, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        logger.debug("Failed to load keyword map, using default", exc_info=True)
+        return default_map
+
+def parse_rule(text: str, *, keyword_map_path: Optional[str] = None) -> Intent:
+    """텍스트를 기반으로 매핑된 규칙을 적용하여 Intent 객체를 생성."""
     t = text.strip().lower()
-    rows, values, chart = [], [], None
-    filters = {}
-    
-    if "월" in t or "월별" in t: rows.append("월")
-    if "카테고리" in t: rows.append("카테고리")
-    if any(k in t for k in ["매출","금액","합계","sum"]): values.append(("금액","sum"))
-    if any(k in t for k in ["수량","개수","count"]): values.append(("수량","sum"))
-    if any(k in t for k in ["막대","bar"]): chart="bar"
-    elif any(k in t for k in ["라인","line"]): chart="line"
-    elif any(k in t for k in ["파이","pie"]): chart="pie"
-    
-    # 필터 인식 (초간단)
-    if "서울" in t: filters.setdefault("도시", []).append("서울")
-    if "부산" in t: filters.setdefault("도시", []).append("부산")
-    if "대구" in t: filters.setdefault("도시", []).append("대구")
-    
+    mapping = _load_keyword_map(keyword_map_path)
+    rows: List[str] = []
+    values: List[Tuple[str, str]] = []
+    chart: Optional[str] = None
+    filters: Dict[str, List[str]] = {}
+
+    # rows 추출
+    for col, keywords in mapping.get("rows", {}).items():
+        if any(kw.lower() in t for kw in keywords):
+            rows.append(col)
+
+    # values 추출
+    for col, cfg in mapping.get("values", {}).items():
+        if any(kw.lower() in t for kw in cfg.get("keywords", [])):
+            values.append((col, cfg.get("agg", "sum")))
+
+    # chart 타입 추출
+    for ctype, kws in mapping.get("chart", {}).items():
+        if any(kw.lower() in t for kw in kws):
+            chart = ctype
+            break
+
+    # filters 추출
+    for fcol, fvals in mapping.get("filters", {}).items():
+        for val, kws in fvals.items():
+            if any(kw.lower() in t for kw in kws):
+                filters.setdefault(fcol, []).append(val)
+
     return Intent(rows=rows, values=values, chart=chart, filters=filters)
 
-def suggest_pivot_structure(df: pd.DataFrame, text: str = "") -> Dict[str, Any]:
-    """데이터 구조를 분석하여 피벗 구성을 제안합니다."""
-    suggestions = {
-        "rows": [],
-        "values": [],
-        "chart": "bar"
-    }
-    
-    # 범주형 컬럼 추천 (고유값이 적은 컬럼)
-    for col in df.columns:
-        if df[col].dtype == 'object' or df[col].dtype.name == 'category':
-            unique_count = df[col].nunique()
-            if 2 <= unique_count <= 20:  # 적당한 범주 수
-                suggestions["rows"].append(col)
-    
-    # 수치형 컬럼 추천
-    numeric_cols = df.select_dtypes(include=['number']).columns
-    for col in numeric_cols:
-        if col not in ['월', '년', '일']:  # 날짜 관련 제외
-            suggestions["values"].append((col, "sum"))
-    
-    # 차트 타입 자동 추천
-    if len(suggestions["rows"]) == 1 and len(suggestions["values"]) == 1:
-        suggestions["chart"] = "bar"
-    elif len(suggestions["rows"]) > 5:
-        suggestions["chart"] = "line"
-    elif len(suggestions["rows"]) <= 3:
-        suggestions["chart"] = "pie"
-    
-    return suggestions
+def parse(text: str, *, columns: Optional[List[str]] = None, parser: str = "auto", keyword_map_path: Optional[str] = None) -> Intent:
+    """규칙 기반/LLM 파서를 선택적으로 실행."""
+    rule_intent = parse_rule(text, keyword_map_path=keyword_map_path)
+    if columns:
+        allowed = {c.lower() for c in columns}
+        rule_intent.rows = [r for r in rule_intent.rows if r.lower() in allowed]
+        rule_intent.values = [(col, agg) for col, agg in rule_intent.values if col.lower() in allowed]
 
-def parse(text: str, *, columns=None, parser="auto") -> Intent:
-    rule = parse_rule(text)
     if parser == "rule":
-        return rule
+        return rule_intent
     if parser == "llm":
-        llm = parse_with_llm(text, allowed_columns=columns)
-        return llm or rule
-    # auto: 규칙 충분하면 규칙, 아니면 LLM
-    if rule.rows and rule.values:
-        return rule
-    llm = parse_with_llm(text, allowed_columns=columns)
-    return llm or rule
+        return parse_with_llm(text, allowed_columns=columns) or rule_intent
+
+    # auto: 규칙 파서 실패시 LLM 사용
+    if rule_intent.rows and rule_intent.values:
+        return rule_intent
+    return parse_with_llm(text, allowed_columns=columns) or rule_intent

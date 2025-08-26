@@ -322,7 +322,14 @@ with tab_watch:
             # 감시 프로세스 시작
             import subprocess
             cmd = [sys.executable, "tools/watch_run.py", "--dir", watch_dir]
-            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            process = subprocess.Popen(
+                cmd, 
+                stdout=subprocess.PIPE, 
+                stderr=subprocess.PIPE, 
+                text=True,
+                encoding="utf-8",
+                errors="replace"
+            )
             
             st.success(f"폴더 감시 시작: {watch_dir}")
             st.info("이제 폴더에 CSV/XLSX 파일을 드롭하면 자동으로 보고서가 생성됩니다.")

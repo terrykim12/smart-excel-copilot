@@ -26,7 +26,14 @@ def _ollama_api(prompt: str, *, fmt_json=True, temperature=0, seed=42, timeout=2
 def _via_ollama_cli(text: str) -> dict:
     if not shutil.which("ollama"): raise RuntimeError("ollama not found")
     prompt = f"{SYS}\nUSER:{text}\nJSON:"
-    p = subprocess.run(["ollama","run",MODEL,prompt], capture_output=True, text=True, timeout=30)
+    p = subprocess.run(
+        ["ollama","run",MODEL,prompt], 
+        capture_output=True, 
+        text=True, 
+        encoding="utf-8",
+        errors="replace",
+        timeout=30
+    )
     p.check_returncode()
     return json.loads(p.stdout.strip())
 

@@ -2,9 +2,11 @@ from __future__ import annotations
 import re
 import unicodedata
 import logging
-from typing import Any, List, Optional
+import warnings
+from typing import Any, List, Optional, Tuple
 import numpy as np
 import pandas as pd
+from dateutil import parser as date_parser
 from app.core.utils import ensure_df
 
 # --- precompiled regex (속도 ↑) ---
@@ -12,6 +14,7 @@ RE_ISO_DATE     = re.compile(r"^\d{4}-\d{1,2}-\d{1,2}$")
 RE_SLASH_DATE   = re.compile(r"^\d{4}/\d{1,2}/\d{1,2}$")
 RE_DOT_DATE     = re.compile(r"^\d{4}\.\d{1,2}\.\d{1,2}$")
 RE_DT_WITH_TIME = re.compile(r"^\d{4}[-/\.]\d{1,2}[-/\.]\d{1,2}[ T]\d{2}:\d{2}:\d{2}$")
+RE_CONTIG_DATE  = re.compile(r"^\d{8}$")  # 새롭게 추가: YYYYMMDD
 
 # 다양한 통화 기호 인식 (₩, 원, $, €, ¥, £ 및 통화 코드)
 RE_HAS_CURRENCY = re.compile(
@@ -74,29 +77,77 @@ def _parse_currency_fast(s: pd.Series, currency_split: bool):
     return nums, None, has_cur.mean()
 
 
-def _parse_date_fast(s: pd.Series, keep_time: bool):
+def _parse_date_fast(
+    s: pd.Series, *, keep_time: bool = False, date_fmt: Optional[str] = None
+) -> Tuple[pd.Series, float]:
+    """
+    다양한 문자열 날짜를 인식하는 확장된 파서.
+    date_fmt가 제공되면 'YYYYMMDD' 같은 형식을 %Y%M%... 형태로 변환해 우선 적용하고,
+    이후 여러 패턴별로 파싱한 뒤 마지막으로 format="mixed" 또는 dateutil 파싱을 시도합니다.
+    """
     st = s.astype("string")
-    mask_iso   = st.str.match(RE_ISO_DATE,   na=False)
-    mask_slash = st.str.match(RE_SLASH_DATE, na=False)
-    mask_dot   = st.str.match(RE_DOT_DATE,   na=False)
-    mask_time  = st.str.match(RE_DT_WITH_TIME, na=False)
-
     out = pd.Series(pd.NaT, index=s.index, dtype="datetime64[ns]")
 
+    # 사용자 정의 포맷 처리
+    if date_fmt:
+        fmt = date_fmt.replace("YYYY", "%Y").replace("MM", "%m").replace("DD", "%d")
+        try:
+            dt = pd.to_datetime(st, format=fmt, errors="coerce")
+            out.loc[dt.notna()] = dt
+        except Exception:
+            pass
+
+    # 간단한 패턴 우선 처리
+    mask_time = st.str.match(RE_DT_WITH_TIME, na=False)
     if mask_time.any():
         out.loc[mask_time] = pd.to_datetime(st[mask_time], errors="coerce")
-    if mask_iso.any():
-        out.loc[mask_iso] = pd.to_datetime(st[mask_iso], format="%Y-%m-%d", errors="coerce")
-    if mask_slash.any():
-        out.loc[mask_slash] = pd.to_datetime(st[mask_slash], format="%Y/%m/%d", errors="coerce")
-    if mask_dot.any():
-        out.loc[mask_dot] = pd.to_datetime(st[mask_dot], format="%Y.%m.%d", errors="coerce")
 
+    for regex, fmt in (
+        (RE_ISO_DATE, "%Y-%m-%d"),
+        (RE_SLASH_DATE, "%Y/%m/%d"),
+        (RE_DOT_DATE, "%Y.%m.%d"),
+    ):
+        mask = st.str.match(regex, na=False)
+        if mask.any():
+            out.loc[mask] = pd.to_datetime(st[mask], format=fmt, errors="coerce")
+
+    # 연속 날짜 (YYYYMMDD) 처리
+    mask_contig = st.str.match(RE_CONTIG_DATE, na=False)
+    if mask_contig.any():
+        out.loc[mask_contig] = pd.to_datetime(
+            st[mask_contig], format="%Y%m%d", errors="coerce"
+        )
+
+    # 남은 값은 format="mixed" 또는 dateutil 파싱
+    mask_remaining = out.isna()
+    if mask_remaining.any():
+        try:
+            # pandas>=2.0 일부 버전에서 지원
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+                general = pd.to_datetime(
+                    st[mask_remaining], format="mixed", errors="coerce"
+                )
+                out.loc[mask_remaining] = general
+        except TypeError:
+            # fallback: dateutil 개별 파싱(경고 없음)
+            def _parse(x: str):
+                try:
+                    return date_parser.parse(x, dayfirst=False)
+                except Exception:
+                    return pd.NaT
+            
+            parsed_dates = st[mask_remaining].map(_parse)
+            out.loc[mask_remaining] = parsed_dates
+
+    # 문자열 포맷으로 변환
     if keep_time:
-        str_out = out.dt.strftime("%Y-%m-%d %H:%M:%S")
+        result = out.dt.strftime("%Y-%m-%d %H:%M:%S")
     else:
-        str_out = out.dt.strftime("%Y-%m-%d")
-    return str_out, (~out.isna()).mean()
+        result = out.dt.strftime("%Y-%m-%d")
+
+    hit_ratio = float((~out.isna()).mean())
+    return result, hit_ratio
 
 
 def level1_clean(
@@ -159,14 +210,15 @@ def level1_clean(
                 else:
                     out[c] = conv
 
-    # 4) 날짜 표준화 (포맷 분기)
+    # 4) 날짜 표준화 (포맷 분기) - boolean, date, currency/number 순으로 처리
     for c in out.columns:
         s = out[c]
         if pd.api.types.is_string_dtype(s) or pd.api.types.is_object_dtype(s):
             keep_time = any(_to_snake(c) == _to_snake(x) for x in preserve_time_cols)
-            parsed, hit = _parse_date_fast(s, keep_time=keep_time)
+            parsed, hit = _parse_date_fast(s, keep_time=keep_time, date_fmt=date_fmt)
             if hit > 0.6:
                 out[c] = parsed
+                logger.debug(f"Date parsing for column '{c}': hit_ratio={hit:.3f}")
 
     # 5) 빈 행/열 제거
     if drop_empty:

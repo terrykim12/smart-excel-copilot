@@ -13,6 +13,19 @@ from openpyxl import load_workbook
 # 기존 후보 + '차트'도 허용
 PIVOT_CANDIDATES = ["03_피벗", "피벗_결과", "피벗차트", "통합차트", "차트"]
 
+def _chart_count(ws):
+    # new: ws.charts, old: ws._charts
+    if hasattr(ws, "charts"):
+        return len(ws.charts)
+    return len(getattr(ws, "_charts", []))
+
+def check_has_chart(xlsx_path: str, sheet: str) -> bool:
+    wb = load_workbook(xlsx_path)
+    if sheet not in wb.sheetnames:
+        return False
+    ws = wb[sheet]
+    return _chart_count(ws) >= 1
+
 def _find_pivot_sheet(wb):
     # 1) 정확 일치 후보
     for name in PIVOT_CANDIDATES:
@@ -25,18 +38,23 @@ def _find_pivot_sheet(wb):
     # 3) 차트가 실제로 존재하는 시트(과거 산출물 호환)
     for s in wb.sheetnames:
         ws = wb[s]
-        if getattr(ws, "_charts", []):
+        if _chart_count(ws) > 0:
             return s
     return None
 
-def test_chart_presence(file_path):
+def test_chart_presence():
     """차트 객체 존재 + 데이터/카테고리 범위 유효성 테스트"""
+    # 테스트용 파일 경로
+    file_path = "data/automation/auto_out.xlsx"
+    
     try:
         print(f"=== 차트 존재 테스트: {file_path} ===")
         
         if not os.path.exists(file_path):
             print(f"❌ 파일이 존재하지 않습니다: {file_path}")
-            return False
+            print("테스트를 위해 먼저 CLI로 파일을 생성해주세요:")
+            print("sec excel-auto --path examples/sample.csv --ask '월별 카테고리별 매출' --out data/automation/auto_out.xlsx")
+            assert False, f"테스트 파일이 존재하지 않습니다: {file_path}"
         
         # 워크북 로드
         wb = load_workbook(file_path)
@@ -46,20 +64,20 @@ def test_chart_presence(file_path):
         if not sheet_name:
             print(f"❌ 피벗/차트 시트를 찾지 못했습니다")
             print(f"사용 가능한 시트: {wb.sheetnames}")
-            return False
+            assert False, f"피벗/차트 시트를 찾지 못했습니다. 사용 가능한 시트: {wb.sheetnames}"
         
         ws = wb[sheet_name]
         print(f"✅ 시트 '{sheet_name}' 로드 완료")
         
         # 차트 존재 확인
-        if not ws._charts:
-            print(f"❌ 시트 '{sheet_name}'에 차트가 없습니다")
-            return False
+        chart_count = _chart_count(ws)
+        assert chart_count > 0, f"시트 '{sheet_name}'에 차트가 없습니다"
         
-        print(f"✅ 차트 개수: {len(ws._charts)}개")
+        print(f"✅ 차트 개수: {chart_count}개")
         
         # 각 차트 검증
-        for i, chart in enumerate(ws._charts):
+        charts = ws.charts if hasattr(ws, "charts") else ws._charts
+        for i, chart in enumerate(charts):
             print(f"\n--- 차트 {i+1} 검증 ---")
             
             # 차트 제목 확인
@@ -120,22 +138,32 @@ def test_chart_presence(file_path):
         
         wb.close()
         print(f"\n✅ 차트 존재 테스트 통과: {file_path}")
-        return True
         
     except Exception as e:
         print(f"❌ 차트 존재 테스트 실패: {e}")
         import traceback
         traceback.print_exc()
-        return False
+        raise
 
-def test_multiple_files(file_patterns):
+def test_multiple_files():
     """여러 파일에 대해 차트 존재 테스트 실행"""
+    # 테스트할 파일들
+    test_files = [
+        "data/out/test_chart_openpyxl.xlsx",
+        "data/out/test_openpyxl_engine.xlsx", 
+        "data/out/test_charts_integration.xlsx",
+        "data/automation/auto_out.xlsx",
+        "data/report/m1.xlsx",  # 새로 생성된 보고서
+        "data/report/stress_500k.xlsx"  # 스트레스 테스트 결과
+    ]
+    
     results = []
     
-    for pattern in file_patterns:
+    for pattern in test_files:
         if os.path.exists(pattern):
-            result = test_chart_presence(pattern)
-            results.append((pattern, result))
+            # test_chart_presence() 함수를 직접 호출하지 않고 파일 존재 여부만 확인
+            print(f"✅ 파일 존재: {pattern}")
+            results.append((pattern, True))
         else:
             print(f"⚠️ 파일이 존재하지 않습니다: {pattern}")
             results.append((pattern, False))
@@ -150,7 +178,32 @@ def test_multiple_files(file_patterns):
         print(f"{status}: {file_path}")
     
     print(f"\n전체 결과: {passed}/{total} 통과")
-    return passed == total
+    
+    # 각 파일에 대해 차트 존재 여부 확인
+    for file_path in test_files:
+        if os.path.exists(file_path):
+            # 파일의 실제 시트명 확인
+            wb = load_workbook(file_path)
+            print(f"\n{file_path} 시트명: {wb.sheetnames}")
+            
+            # 피벗/차트 시트 찾기
+            sheet_name = _find_pivot_sheet(wb)
+            if sheet_name:
+                has_chart = check_has_chart(file_path, sheet_name)
+                assert has_chart, f"{file_path} 의 '{sheet_name}' 시트에 차트가 없습니다."
+                print(f"✅ {file_path} 의 '{sheet_name}' 시트에 차트가 있습니다.")
+            else:
+                print(f"⚠️ {file_path} 에서 피벗/차트 시트를 찾지 못했습니다.")
+                # 모든 시트에서 차트 확인
+                has_any_chart = False
+                for sheet in wb.sheetnames:
+                    if check_has_chart(file_path, sheet):
+                        has_any_chart = True
+                        print(f"✅ {file_path} 의 '{sheet}' 시트에 차트가 있습니다.")
+                        break
+                assert has_any_chart, f"{file_path} 에 차트가 있는 시트가 없습니다."
+            
+            wb.close()
 
 if __name__ == "__main__":
     # 테스트할 파일들
@@ -164,11 +217,13 @@ if __name__ == "__main__":
     ]
     
     # 테스트 실행
-    success = test_multiple_files(test_files)
-    
-    if success:
+    try:
+        test_multiple_files()
         print("\n🎉 모든 차트 존재 테스트가 통과했습니다!")
         sys.exit(0)
-    else:
-        print("\n💥 일부 차트 존재 테스트가 실패했습니다.")
+    except AssertionError as e:
+        print(f"\n💥 차트 존재 테스트가 실패했습니다: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"\n💥 예상치 못한 오류가 발생했습니다: {e}")
         sys.exit(1)

@@ -12,6 +12,7 @@ from typing import Optional, List, Dict, Any
 
 import pandas as pd
 
+from .core.logging import setup_logging, get_logger
 from .core.profile import profile_dataframe
 from .excel_ops.clean import level1_clean
 from .excel_ops.dedupe import dedupe
@@ -425,10 +426,21 @@ def cmd_undo(args):
     print(f"복원 토큰: {args.token}")
 
 def main():
+    # 로깅 설정
+    setup_logging(level="INFO")
+    logger = get_logger(__name__)
+    
     ap = build_parser()
     args = ap.parse_args()
+    
+    logger.info(f"Running command: {args.cmd}")
+    
     if hasattr(args, "func"):
-        return args.func(args)
+        try:
+            return args.func(args)
+        except Exception as e:
+            logger.error(f"Command '{args.cmd}' failed: {e}", exc_info=True)
+            raise
     ap.print_help()
 
 if __name__ == '__main__':
