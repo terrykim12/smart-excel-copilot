@@ -1,0 +1,2 @@
+[console_scripts]
+sec = app.cli:main

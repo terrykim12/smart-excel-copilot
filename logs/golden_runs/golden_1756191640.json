@@ -1,0 +1,35 @@
+{
+  "results": [
+    {
+      "file": "s01_mixed_currency.cleaned.cleaned.csv",
+      "seconds": 3.133,
+      "rc": 0
+    },
+    {
+      "file": "s01_mixed_currency.cleaned.csv",
+      "seconds": 3.018,
+      "rc": 0
+    },
+    {
+      "file": "s01_mixed_currency.csv",
+      "seconds": 2.974,
+      "rc": 1
+    },
+    {
+      "file": "s05_duplicates.cleaned.cleaned.csv",
+      "seconds": 3.0039999999999996,
+      "rc": 0
+    },
+    {
+      "file": "s05_duplicates.cleaned.csv",
+      "seconds": 2.992,
+      "rc": 0
+    },
+    {
+      "file": "s05_duplicates.csv",
+      "seconds": 3.066,
+      "rc": 0
+    }
+  ],
+  "ts": 1756191640
+}

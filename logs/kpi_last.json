@@ -1,0 +1,195 @@
+{
+  "ts": 1756194783,
+  "results": [
+    {
+      "file": "C:\\Ai\\Excel_Auto\\data\\goldensets\\s01_mixed_currency.cleaned.cleaned.cleaned.cleaned.csv",
+      "before": {
+        "rows": 4,
+        "missing_rate": 0.0714,
+        "dup_rate": 0.0,
+        "numeric_col_rate": 0.2857,
+        "date_parse_rate_guess": 0.35
+      },
+      "after": {
+        "rows": 4,
+        "missing_rate": 0.0714,
+        "dup_rate": 0.0,
+        "numeric_col_rate": 0.2857,
+        "date_parse_rate_guess": 0.5833
+      },
+      "t_clean_s": 0.013,
+      "t_dedupe_s": 0.0
+    },
+    {
+      "file": "C:\\Ai\\Excel_Auto\\data\\goldensets\\s01_mixed_currency.cleaned.cleaned.cleaned.csv",
+      "before": {
+        "rows": 4,
+        "missing_rate": 0.0714,
+        "dup_rate": 0.0,
+        "numeric_col_rate": 0.2857,
+        "date_parse_rate_guess": 0.35
+      },
+      "after": {
+        "rows": 4,
+        "missing_rate": 0.0714,
+        "dup_rate": 0.0,
+        "numeric_col_rate": 0.2857,
+        "date_parse_rate_guess": 0.5833
+      },
+      "t_clean_s": 0.012,
+      "t_dedupe_s": 0.0
+    },
+    {
+      "file": "C:\\Ai\\Excel_Auto\\data\\goldensets\\s01_mixed_currency.cleaned.cleaned.csv",
+      "before": {
+        "rows": 4,
+        "missing_rate": 0.0714,
+        "dup_rate": 0.0,
+        "numeric_col_rate": 0.2857,
+        "date_parse_rate_guess": 0.35
+      },
+      "after": {
+        "rows": 4,
+        "missing_rate": 0.0714,
+        "dup_rate": 0.0,
+        "numeric_col_rate": 0.2857,
+        "date_parse_rate_guess": 0.5833
+      },
+      "t_clean_s": 0.012,
+      "t_dedupe_s": 0.0
+    },
+    {
+      "file": "C:\\Ai\\Excel_Auto\\data\\goldensets\\s01_mixed_currency.cleaned.csv",
+      "before": {
+        "rows": 4,
+        "missing_rate": 0.0714,
+        "dup_rate": 0.0,
+        "numeric_col_rate": 0.2857,
+        "date_parse_rate_guess": 0.35
+      },
+      "after": {
+        "rows": 4,
+        "missing_rate": 0.0714,
+        "dup_rate": 0.0,
+        "numeric_col_rate": 0.2857,
+        "date_parse_rate_guess": 0.5833
+      },
+      "t_clean_s": 0.01,
+      "t_dedupe_s": 0.0
+    },
+    {
+      "file": "C:\\Ai\\Excel_Auto\\data\\goldensets\\s01_mixed_currency.csv",
+      "before": {
+        "rows": 4,
+        "missing_rate": 0.1429,
+        "dup_rate": 0.0,
+        "numeric_col_rate": 0.1429,
+        "date_parse_rate_guess": 0.2083
+      },
+      "after": {
+        "rows": 4,
+        "missing_rate": 0.0714,
+        "dup_rate": 0.0,
+        "numeric_col_rate": 0.2857,
+        "date_parse_rate_guess": 0.5833
+      },
+      "t_clean_s": 0.015,
+      "t_dedupe_s": 0.001
+    },
+    {
+      "file": "C:\\Ai\\Excel_Auto\\data\\goldensets\\s05_duplicates.cleaned.cleaned.cleaned.cleaned.csv",
+      "before": {
+        "rows": 3,
+        "missing_rate": 0.0,
+        "dup_rate": 0.0,
+        "numeric_col_rate": 0.3333,
+        "date_parse_rate_guess": 0.5
+      },
+      "after": {
+        "rows": 3,
+        "missing_rate": 0.0,
+        "dup_rate": 0.0,
+        "numeric_col_rate": 0.3333,
+        "date_parse_rate_guess": 1.0
+      },
+      "t_clean_s": 0.009,
+      "t_dedupe_s": 0.0
+    },
+    {
+      "file": "C:\\Ai\\Excel_Auto\\data\\goldensets\\s05_duplicates.cleaned.cleaned.cleaned.csv",
+      "before": {
+        "rows": 3,
+        "missing_rate": 0.0,
+        "dup_rate": 0.0,
+        "numeric_col_rate": 0.3333,
+        "date_parse_rate_guess": 0.5
+      },
+      "after": {
+        "rows": 3,
+        "missing_rate": 0.0,
+        "dup_rate": 0.0,
+        "numeric_col_rate": 0.3333,
+        "date_parse_rate_guess": 1.0
+      },
+      "t_clean_s": 0.009,
+      "t_dedupe_s": 0.001
+    },
+    {
+      "file": "C:\\Ai\\Excel_Auto\\data\\goldensets\\s05_duplicates.cleaned.cleaned.csv",
+      "before": {
+        "rows": 3,
+        "missing_rate": 0.0,
+        "dup_rate": 0.0,
+        "numeric_col_rate": 0.3333,
+        "date_parse_rate_guess": 0.5
+      },
+      "after": {
+        "rows": 3,
+        "missing_rate": 0.0,
+        "dup_rate": 0.0,
+        "numeric_col_rate": 0.3333,
+        "date_parse_rate_guess": 1.0
+      },
+      "t_clean_s": 0.009,
+      "t_dedupe_s": 0.0
+    },
+    {
+      "file": "C:\\Ai\\Excel_Auto\\data\\goldensets\\s05_duplicates.cleaned.csv",
+      "before": {
+        "rows": 3,
+        "missing_rate": 0.0,
+        "dup_rate": 0.0,
+        "numeric_col_rate": 0.3333,
+        "date_parse_rate_guess": 0.5
+      },
+      "after": {
+        "rows": 3,
+        "missing_rate": 0.0,
+        "dup_rate": 0.0,
+        "numeric_col_rate": 0.3333,
+        "date_parse_rate_guess": 1.0
+      },
+      "t_clean_s": 0.009,
+      "t_dedupe_s": 0.0
+    },
+    {
+      "file": "C:\\Ai\\Excel_Auto\\data\\goldensets\\s05_duplicates.csv",
+      "before": {
+        "rows": 3,
+        "missing_rate": 0.1429,
+        "dup_rate": 0.0,
+        "numeric_col_rate": 0.4286,
+        "date_parse_rate_guess": 0.5
+      },
+      "after": {
+        "rows": 3,
+        "missing_rate": 0.0,
+        "dup_rate": 0.0,
+        "numeric_col_rate": 0.3333,
+        "date_parse_rate_guess": 1.0
+      },
+      "t_clean_s": 0.011,
+      "t_dedupe_s": 0.0
+    }
+  ]
+}

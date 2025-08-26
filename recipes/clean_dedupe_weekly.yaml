@@ -1,0 +1,19 @@
+version: 1
+name: weekly_clean_dedupe
+source:
+  path: "data/samples/transactions_utf8.csv"
+steps:
+  - action: clean
+    params:
+      type_infer: true
+      normalize:
+        trim: true
+        currency_split: true
+        date_fmt: "YYYY-MM-DD"
+  - action: dedupe
+    params:
+      keys: ["거래id"]
+      keep: "last_by:업데이트일"
+target:
+  path: "data/out/weekly.cleaned.csv"
+

@@ -1,0 +1,21 @@
+[bench] generating synthetic data: 120000 rows ...
+[bench] data generated in 1.07s
+[bench] profiling ...
+[bench] profile done in 0.46s, cols=7
+[bench] cleaning (level1) ...
+[debug] cols after snake_case: ['거래id', '주문일', '업데이트일', '금액', '도시', '활성', '메모']
+[debug] cols repr: ['거래id', '주문일', '업데이트일', '금액', '도시', '활성', '메모']
+[bench] clean done in 1.76s, shape=(120000, 8)
+[bench] columns after clean: ['거래id', '주문일', '업데이트일', '금액', '도시', '활성', '메모', '금액__currency']
+[bench] dedupe ...
+[bench] dedupe done in 0.14s, rows=109245
+[bench] saved: C:\Ai\Excel_Auto\data\bench\bench_120000_1756138529.json
+{
+  "rows": 120000,
+  "t_generate_s": 1.071,
+  "t_profile_s": 0.46,
+  "t_clean_s": 1.761,
+  "t_dedupe_s": 0.142,
+  "rows_after_clean": 120000,
+  "rows_after_dedupe": 109245
+}

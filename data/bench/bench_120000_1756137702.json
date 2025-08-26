@@ -1,0 +1,9 @@
+{
+  "rows": 120000,
+  "t_generate_s": 1.088,
+  "t_profile_s": 0.503,
+  "t_clean_s": 16.288,
+  "t_dedupe_s": 0.09,
+  "rows_after_clean": 120000,
+  "rows_after_dedupe": 109245
+}

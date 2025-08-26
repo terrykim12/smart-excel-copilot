@@ -1,0 +1,20 @@
+[
+  {
+    "file": "C:\\Ai\\Excel_Auto\\data\\goldensets\\s01_mixed_currency.csv",
+    "n_rows": 4,
+    "n_cols": 7,
+    "clean_rows": 4,
+    "dedup_rows": 3,
+    "dup_removed": 1,
+    "seconds": 0.015
+  },
+  {
+    "file": "C:\\Ai\\Excel_Auto\\data\\goldensets\\s05_duplicates.csv",
+    "n_rows": 3,
+    "n_cols": 7,
+    "clean_rows": 3,
+    "dedup_rows": 2,
+    "dup_removed": 1,
+    "seconds": 0.011
+  }
+]

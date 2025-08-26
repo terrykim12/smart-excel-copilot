@@ -1,0 +1,20 @@
+[bench] generating synthetic data: 120000 rows ...
+[bench] data generated in 1.07s
+[bench] profiling ...
+[bench] profile done in 0.46s, cols=7
+[bench] cleaning (level1) ...
+[debug] cols after snake_case: ['�ŷ�id', '�ֹ���', '������Ʈ��', '�ݾ�', '����', 'Ȱ��', '�޸�']
+[bench] clean done in 1.78s, shape=(120000, 8)
+[bench] columns after clean: ['�ŷ�id', '�ֹ���', '������Ʈ��', '�ݾ�', '����', 'Ȱ��', '�޸�', '�ݾ�__currency']
+[bench] dedupe ...
+[bench] dedupe done in 0.17s, rows=109245
+[bench] saved: C:\Ai\Excel_Auto\data\bench\bench_120000_1756138360.json
+{
+  "rows": 120000,
+  "t_generate_s": 1.07,
+  "t_profile_s": 0.455,
+  "t_clean_s": 1.783,
+  "t_dedupe_s": 0.173,
+  "rows_after_clean": 120000,
+  "rows_after_dedupe": 109245
+}

@@ -1,0 +1,15 @@
+{
+  "results": [
+    {
+      "file": "s01_mixed_currency.csv",
+      "seconds": 2.601,
+      "rc": 1
+    },
+    {
+      "file": "s05_duplicates.csv",
+      "seconds": 2.436,
+      "rc": 1
+    }
+  ],
+  "ts": 1756139957
+}

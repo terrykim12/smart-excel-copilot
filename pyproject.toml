@@ -1,0 +1,49 @@
+[project]
+name = "smart-excel-copilot"
+version = "1.0.0-rc3"
+description = "Smart Excel Copilot - AI-powered Excel automation and reporting"
+authors = [
+    {name = "Excel Copilot Team", email = "team@excelcopilot.ai"}
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pandas>=2.0.0",
+    "openpyxl>=3.1.2",
+    "streamlit>=1.28.0",
+    "pyyaml>=6.0",
+    "pathlib2>=2.3.7",
+]
+
+[project.scripts]
+sec = "app.cli:main"  # sec 명령으로 실행 가능
+
+[project.optional-dependencies]
+watch = ["watchdog>=4.0.0"]
+excel = ["openpyxl>=3.1.2"]
+fastio = ["pyarrow>=15.0.0"]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project.urls]
+Homepage = "https://github.com/excel-auto/excel-auto"
+Repository = "https://github.com/excel-auto/excel-auto.git"
+Issues = "https://github.com/excel-auto/excel-auto/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+exclude = ["data*", "logs*", "recipes*", "llm*", "tools*", "tests*"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+

@@ -1,0 +1,10 @@
+checks:
+  - unique: ["거래ID"]
+  - required: ["거래ID","금액","주문일"]
+  - regex:
+      column: "전화번호"
+      pattern: "^01[016789]-\\d{3,4}-\\d{4}$"
+  - range:
+      column: "금액"
+      min: 0
+      max: 1000000000

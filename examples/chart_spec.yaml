@@ -1,0 +1,27 @@
+# 차트 DSL 스펙 예시
+title: "날짜별 카테고리 매출"
+sheet: "피벗_결과"
+x: "날짜"  # 실제 컬럼명
+rows: ["카테고리"]
+series:
+  - field: "금액"
+    type: bar
+    legend: top
+    value_format: "₩#,##0"
+  - field: "수량"
+    type: line
+    legend: top
+    value_format: "#,##0"
+
+# 차트 스타일 설정
+style:
+  chart_type: "bar"
+  colors: ["#1f77b4", "#ff7f0e", "#2ca02c"]
+  grid: true
+  legend_position: "top"
+
+# 출력 설정
+output:
+  filename: "auto_out"
+  format: "xlsx"
+  include_summary: true

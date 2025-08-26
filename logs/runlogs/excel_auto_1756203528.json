@@ -1,0 +1,12 @@
+{
+  "ts": 1756203528,
+  "kind": "excel_auto",
+  "ask": "월별 카테고리 매출 피벗 만들고 막대차트",
+  "engine": "fallback",
+  "out": "data/automation/auto_out.xlsx",
+  "pivot_shape": [
+    20,
+    3
+  ],
+  "filters": {}
+}

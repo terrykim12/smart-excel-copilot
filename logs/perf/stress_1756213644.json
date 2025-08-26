@@ -1,0 +1,13 @@
+{
+  "rows": 500000,
+  "columns": 6,
+  "t_generate_s": 0.186,
+  "t_report_s": 1.234,
+  "t_total_s": 1.42,
+  "pivot_shape": [
+    800,
+    4
+  ],
+  "output_file": "C:\\Ai\\Excel_Auto\\data\\report\\stress_500k.xlsx",
+  "timestamp": "2025-08-26 22:07:24"
+}
