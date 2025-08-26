@@ -8,7 +8,7 @@ import sys
 import json
 import argparse
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
 import pandas as pd
 
@@ -16,7 +16,7 @@ from .core.profile import profile_dataframe
 from .excel_ops.clean import level1_clean
 from .excel_ops.dedupe import dedupe
 from .excel_ops.impute import handle_missing_values, analyze_missing_patterns, suggest_impute_strategies
-from .excel_ops.outlier import detect_outliers, handle_outliers, get_outlier_summary
+from .excel_ops.outlier import outlier
 from .excel_ops.schema import align_schemas, merge_aligned_dataframes, analyze_schema_compatibility
 from .recipes.manager import RecipeManager
 from .autoexcel.intent import parse as nl_parse
@@ -56,8 +56,10 @@ def build_parser():
     # preprocess (pipeline)
     sp = sub.add_parser("preprocess", help="Clean + (optional) impute/outlier")
     sp.add_argument("--path", required=True)
+    sp.add_argument("--sheet", default=None, help="Sheet name if Excel")
     sp.add_argument("--impute", default=None, help='e.g. "median:금액;zero:수량"')
-    sp.add_argument("--outlier", default=None, help='e.g. "iqr_clip:금액@k=1.5"')
+    sp.add_argument("--outlier", default=None,
+        help='e.g. "iqr_clip:금액@multiplier=1.5;zscore_clip:수량@z=3"  (alias: k= for multiplier)')
     sp.add_argument("--gate-dsl", default=None, help="Validation DSL file")
     sp.add_argument("--gate-pass-threshold", type=float, default=1.0)
     sp.add_argument("--apply", action="store_true")
@@ -131,6 +133,48 @@ def _auto_out_path(input_path: str, suffix: str = "_cleaned") -> str:
     p = Path(input_path)
     return str(p.parent / f"{p.stem}{suffix}{p.suffix}")
 
+def _parse_outlier_rules(outlier_str: str) -> List[Dict[str, Any]]:
+    """이상치 규칙 파싱 (k -> multiplier 별칭 지원)"""
+    out = []
+    if not outlier_str:
+        return out
+    
+    for t in outlier_str.split(";"):
+        t = t.strip()
+        if not t:
+            continue
+        
+        head, *attrs = t.split("@")
+        method_col = head.split(":", 1)
+        if len(method_col) != 2:
+            continue
+            
+        method, col = method_col
+        item = {"method": method.strip(), "col": col.strip()}
+        
+        for a in attrs:
+            for kv in a.split(","):
+                if "=" in kv:
+                    k, v = kv.split("=", 1)
+                    k = k.strip()
+                    v = v.strip()
+                    
+                    # 숫자 변환
+                    try:
+                        v = float(v) if any(ch.isdigit() for ch in v) else v
+                    except Exception:
+                        pass
+                    
+                    # ★ alias: k -> multiplier
+                    if k == "k":
+                        k = "multiplier"
+                    
+                    item[k] = v
+        
+        out.append(item)
+    
+    return out
+
 def cmd_profile(args):
     """데이터셋 프로파일링"""
     path = _resolve_path_arg(args)
@@ -202,13 +246,22 @@ def cmd_preprocess(args):
     
     # 2단계: 결측치 처리
     if args.impute:
-        # impute 규칙 파싱 및 적용
-        pass
-    
+        # 'median:금액;zero:수량'과 같은 규칙 파싱
+        strategies = {}
+        for rule in args.impute.split(";"):
+            if not rule.strip():
+                continue
+            strat, col = rule.split(":")
+            strategies[col] = strat
+        df = handle_missing_values(df, strategies)
+
     # 3단계: 이상치 처리
     if args.outlier:
-        # outlier 규칙 파싱 및 적용
-        pass
+        # 이상치 규칙 파싱 및 처리
+        rules = _parse_outlier_rules(args.outlier)
+        df, outlier_report = outlier(df, rules)
+        if outlier_report.get("outlier"):
+            print(f"[outlier] 처리 완료: {json.dumps(outlier_report, ensure_ascii=False)}")
     
     if args.apply:
         out_path = _auto_out_path(path, "_preprocessed")

@@ -1,5 +1,7 @@
 from __future__ import annotations
-import re, unicodedata
+import re
+import unicodedata
+import logging
 from typing import Any, List, Optional
 import numpy as np
 import pandas as pd
@@ -11,7 +13,10 @@ RE_SLASH_DATE   = re.compile(r"^\d{4}/\d{1,2}/\d{1,2}$")
 RE_DOT_DATE     = re.compile(r"^\d{4}\.\d{1,2}\.\d{1,2}$")
 RE_DT_WITH_TIME = re.compile(r"^\d{4}[-/\.]\d{1,2}[-/\.]\d{1,2}[ T]\d{2}:\d{2}:\d{2}$")
 
-RE_HAS_CURRENCY = re.compile(r"(?:₩|원|KRW|krw)")
+# 다양한 통화 기호 인식 (₩, 원, $, €, ¥, £ 및 통화 코드)
+RE_HAS_CURRENCY = re.compile(
+    r"(?:₩|원|KRW|krw|\$|USD|usd|€|EUR|eur|¥|JPY|jpy|£|GBP|gbp)"
+)
 RE_NUM_KEEP     = re.compile(r"[^\d\.\-]")  # 숫자/소수점/부호만 남김
 
 BOOL_MAP = {
@@ -115,9 +120,10 @@ def level1_clean(
 
     # 0) 열 이름 표준화
     out = _snake_columns(out)
-    # debug
-    print("[debug] cols after snake_case:", list(out.columns))
-    print("[debug] cols repr:", repr(list(out.columns)))
+    # 디버깅 메시지는 logging을 사용해 출력 (필요 시만)
+    logger = logging.getLogger(__name__)
+    logger.debug("Columns after snake_case: %s", list(out.columns))
+    logger.debug("Columns repr: %s", repr(list(out.columns)))
 
     # 1) 문자열 트림
     if trim:

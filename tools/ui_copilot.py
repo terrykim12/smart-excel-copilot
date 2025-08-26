@@ -1,6 +1,6 @@
 # tools/ui_copilot.py
 from __future__ import annotations
-import io, json, os, traceback
+import io, json, os, sys, traceback  # sys 추가
 from pathlib import Path
 
 import pandas as pd
@@ -149,43 +149,34 @@ with tab_pre:
             df1 = level1_clean(df, trim=opt_trim, date_fmt=("YYYY-MM-DD" if opt_date else "KEEP"),
                                currency_split=opt_currency, drop_empty=opt_drop_empty)
             info = {}
-            # dedupe
+            # 중복 제거
             if dedupe_keys.strip():
                 keys = [k.strip() for k in dedupe_keys.split(",") if k.strip()]
                 df1, info = dedupe(df1, keys=keys, keep=keep_rule)
-            # impute
+            # 결측치 처리
             if impute_rule.strip():
-                def parse_kv(s):
-                    out=[]
-                    for t in s.split(";"):
-                        t=t.strip()
-                        if not t: continue
-                        m,c = t.split(":",1)
-                        out.append({"method":m.strip(),"col":c.strip()})
-                    return out
-                df1, rep_i = do_impute(df1, parse_kv(impute_rule))
-                st.caption(f"결측 대체 리포트: {json.dumps(rep_i, ensure_ascii=False)}")
-            # outlier
+                strategies = {}
+                for rule in impute_rule.split(";"):
+                    if not rule.strip():
+                        continue
+                    strat, col = rule.split(":")
+                    strategies[col] = strat
+                df1 = do_impute(df1, strategies)
+            # 이상치 처리
             if outlier_rule.strip():
-                def parse_ol(s):
-                    out=[]
-                    for t in s.split(";"):
-                        t=t.strip()
-                        if not t: continue
-                        head,*attrs = t.split("@")
-                        m,c = head.split(":",1)
-                        item={"method":m.strip(),"col":c.strip()}
-                        for a in attrs:
-                            for kv in a.split(","):
-                                if "=" in kv:
-                                    k,v = kv.split("=",1)
-                                    try: v = float(v) if any(x in v for x in ".0123456789") else v
-                                    except: pass
-                                    item[k.strip()]=v
-                        out.append(item)
-                    return out
-                df1, rep_o = do_outlier(df1, parse_ol(outlier_rule))
-                st.caption(f"이상치 처리 리포트: {json.dumps(rep_o, ensure_ascii=False)}")
+                for rule in outlier_rule.split(";"):
+                    if not rule.strip():
+                        continue
+                    method_action, col_params = rule.split(":")
+                    method, action = method_action.split("_", 1)
+                    if "@" in col_params:
+                        col, params = col_params.split("@", 1)
+                        kwargs = dict(p.split("=") for p in params.split(","))
+                    else:
+                        col, kwargs = col_params, {}
+                    out_info = do_outlier(df1, columns=[col], method=method, **kwargs)
+                    df1 = do_outlier(df1, columns=[col], method=method,
+                                       action=action, **kwargs)
 
             st.success("전처리 미리보기 완료")
             st.dataframe(df1.head(30))
